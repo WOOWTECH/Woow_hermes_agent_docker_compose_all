@@ -1,0 +1,54 @@
+# Dependencies
+node_modules/
+.npm/
+package-lock.json
+
+# Environment files / Secrets
+.env
+.env.*
+.env.old
+!.env.example
+cf-config.json
+**/cf-config.json
+
+# Test secrets
+tests/pre-launch/config.env
+**/config.env
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# IDE
+.vscode/
+.idea/
+
+# Test artifacts
+/tmp/
+test-results/
+playwright-report/
+.playwright-cli/
+
+# Runtime data
+task_plan.md
+findings.md
+progress.md
+
+# Python
+__pycache__/
+*.pyc
+venv/
+
+# Build
+dist/
+build/
+
+# Logs
+*.log
+
+# Secrets (never commit real values)
+**/secrets.yaml
+!k8s-manifests/02-secrets.yaml
+
+# Screenshots (temp)
+*.png

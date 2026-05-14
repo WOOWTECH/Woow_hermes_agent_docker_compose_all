@@ -1,23 +1,25 @@
-# Woow Hermes Agent — AI Smart Home Assistant Deployment
+# Woow Hermes Agent — K3s Kubernetes Deployment
 
-**Hermes AI Agent — Multi-Environment Deployment**
-**Hermes AI 智慧助理 — 多環境部署方案**
+**Hermes AI Agent on K3s — Production Deployment Guide**
+**Hermes AI 智慧助理 K3s — 生產環境部署指南**
 
-Deploy Hermes AI smart home assistant with WebUI, Minimax M2.7 LLM, 26 CLI tools, PostgreSQL, Redis, Cloudflare Tunnel, and enterprise-grade test suite.
+This branch contains the complete K3s Kubernetes deployment for Hermes AI smart home assistant, including custom Docker image with 26 CLI tools, RBAC, Cloudflare Tunnel, and enterprise-grade test suite (80+ tests).
 
-部署 Hermes AI 智慧家庭助理，包含 WebUI、Minimax M2.7 大語言模型、26 個 CLI 工具、PostgreSQL、Redis、Cloudflare Tunnel、企業級測試套件。
+此分支包含 Hermes AI 智慧助理的完整 K3s 部署，包含自訂 Docker image（26 個 CLI 工具）、RBAC、Cloudflare Tunnel、企業級測試套件（80+ 測試）。
 
 ---
 
-## Deployment Options / 部署方式
+## Cluster Info / 集群資訊
 
-| Branch | Environment | Description |
-|--------|-------------|-------------|
-| **`k3s`** | K3s Cluster | Production multi-node deployment with K8s manifests, custom Docker image, RBAC, Cloudflare Tunnel |
-| **`main`** | Reference | Architecture docs, shared manifests, deployment guides |
-| **`podman`** | Podman | Single-node deployment with podman-compose (coming soon) |
-
-> **For K3s installation, switch to the [`k3s`](../../tree/k3s) branch.**
+| Item | Value |
+|------|-------|
+| **K3s Version** | v1.34.3+k3s1 |
+| **Nodes** | 2 master + 7 worker (amd64, Ubuntu 24.04) |
+| **Namespace** | `hermes` |
+| **Domain** | `hermes-woowtechmag.woowtech.io` |
+| **LLM** | Minimax M2.7 (via `MINIMAX_API_KEY`) |
+| **Storage** | local-path-provisioner |
+| **Ingress** | Traefik (K3s default) |
 
 ---
 
@@ -27,151 +29,295 @@ Deploy Hermes AI smart home assistant with WebUI, Minimax M2.7 LLM, 26 CLI tools
 Internet (HTTPS)
     |
     v
-+------------------------------------------------+
-|  Cloudflare Edge (DDoS + TLS)                  |
-|  hermes-woowtechmag.woowtech.io               |
-+------------------------------------------------+
+Cloudflare Edge (DDoS + TLS)
+hermes-woowtechmag.woowtech.io
     |  QUIC Tunnel (khh01 + tpe01)
     v
 +================================================+
 | K3s Cluster — Namespace: hermes                |
-|  (2 master + 7 worker nodes, amd64)            |
 |                                                |
-|  +----------------+   +--------------------+   |
-|  | cloudflared    |-->| hermes-webui       |   |
-|  | (tunnel)       |   | :8787              |   |
-|  +----------------+   | +-- Chat UI        |   |
-|                       | +-- Sessions       |   |
-|                       | +-- Skills         |   |
-|                       | +-- Memory         |   |
-|                       | +-- 26 CLI Tools   |   |
-|                       +--------+-----------+   |
-|                                |               |
-|                       +--------------------+   |
-|                       | hermes-agent       |   |
-|                       | :8642 (gateway)    |   |
-|                       | :9119 (dashboard)  |   |
-|                       | +-- Minimax M2.7   |   |
-|                       | +-- API Server     |   |
-|                       | +-- Cron/Tasks     |   |
-|                       | +-- 87 Skills      |   |
-|                       +--------+-----------+   |
-|                                |               |
-|                    +-----------+-----------+   |
-|                    |                       |   |
-|              +-----------+         +-------+   |
-|              | PostgreSQL |         | Redis |   |
-|              | :5432      |         | :6379 |   |
-|              | 10Gi PVC   |         | 5Gi   |   |
-|              +-----------+         +-------+   |
+|  cloudflared ──> hermes-webui :8787            |
+|                      |                         |
+|                      v                         |
+|                 hermes-agent :8642 :9119        |
+|                   |          |                  |
+|                   v          v                  |
+|              PostgreSQL   Redis                 |
+|              :5432 10Gi   :6379 5Gi             |
 +================================================+
 ```
 
 ---
 
-## Services / 服務
+## Directory Structure / 目錄結構
 
-| Service | Image | Port | Description |
-|---------|-------|------|-------------|
-| **Hermes Agent** | `hermes-agent-custom:latest` | 8642, 9119 | AI gateway (Minimax M2.7), 87 skills, cron, API server |
-| **Hermes WebUI** | `ghcr.io/nesquena/hermes-webui:latest` | 8787 | Chat UI, sessions, memory, workspace, 26 CLI tools |
-| **PostgreSQL** | `postgres:15` | 5432 | Database (10Gi PVC, pg_isready health check) |
-| **Redis** | `redis:7-alpine` | 6379 | Cache + task queue (5Gi PVC, AOF persistence) |
-| **Cloudflared** | `cloudflare/cloudflared:latest` | 20241 | Cloudflare Tunnel (QUIC, multi-region) |
-
----
-
-## CLI Tools (26) / 命令列工具
-
-Custom Docker image includes 26 enterprise CLI tools baked in:
-
-### Wave 1: Core Productivity
-`jq` `yq` `fd` `rsync` `git-lfs` `mosh`
-
-### Wave 2: Business Integration
-`psql` `redis-cli` `kubectl` `helm` `argocd` `cloudflared` `gh`
-
-### Wave 3: Content Generation
-`pandoc` `ImageMagick` `gcloud` `httpie`
-
-### Wave 4: Exploration
-`lynx` `nmap` `dig` `ping` `nc` `traceroute` `chromium` `playwright-cli` `yt-dlp`
-
----
-
-## K3s Quick Start / K3s 快速開始
-
-```bash
-# 1. Clone and switch to k3s branch
-git clone https://github.com/WOOWTECH/Woow_hermes_agent_docker_compose_all.git
-cd Woow_hermes_agent_docker_compose_all
-git checkout k3s
-
-# 2. Initialize Cloudflare Tunnel
-CF_API_TOKEN=<your-token> python3 init-cloudflare-hermes.py
-
-# 3. Deploy
-./deploy.sh
-
-# 4. Verify
-kubectl get pods -n hermes
+```
+.
+├── README.md                    # This file
+├── Dockerfile.hermes-agent      # Custom image (26 CLI tools baked in)
+├── build-image.sh               # Build + push script
+├── deploy.sh                    # One-click deployment
+├── init-cloudflare-hermes.py    # Cloudflare Tunnel auto-init
+├── .env.example                 # Environment template
+├── .gitignore
+├── k8s-manifests/
+│   ├── 00-namespace.yaml        # hermes namespace
+│   ├── 01-secrets.yaml          # API keys, tokens (template)
+│   ├── 01a-rbac.yaml            # ServiceAccount + RBAC
+│   ├── 02-configmap.yaml        # Non-secret configuration
+│   ├── 03-pvc.yaml              # PVC: PostgreSQL 10Gi, Redis 5Gi, Home 10Gi
+│   ├── 04-postgresql.yaml       # PostgreSQL 15 Deployment + Service
+│   ├── 05-redis.yaml            # Redis 7-alpine Deployment + Service
+│   ├── 06-hermes-agent.yaml     # Hermes Agent (custom image) + Service
+│   ├── 07-hermes-webui.yaml     # Hermes WebUI + initContainers + Service
+│   ├── 08-cloudflared.yaml      # Cloudflare Tunnel Deployment
+│   ├── 09-ingress.yaml          # Traefik Ingress (/ → WebUI, /api → Agent)
+│   └── 10-network-policy.yaml   # NetworkPolicy (DB/Redis isolation)
+└── tests/
+    ├── config.env               # Test environment config
+    ├── run-all.sh               # Master test runner (5 rounds + Playwright)
+    ├── run-cli-tools-e2e.sh     # 15-scenario CLI tools E2E test
+    ├── round1-infra.sh          # Infrastructure health (17 tests)
+    ├── round2-api.sh            # Backend API (14 tests)
+    ├── round3-security.sh       # Security & stress (16 tests)
+    ├── round4-resilience.sh     # Resilience & recovery (11 tests)
+    ├── round5-integration.sh    # Cross-service integration (10 tests)
+    ├── lib/
+    │   ├── assert.sh            # pass/fail/skip assertion library
+    │   └── report.sh            # HTML report generator (dark theme)
+    ├── playwright/
+    │   ├── playwright.config.mjs
+    │   └── hermes-webui.spec.mjs  # 12 browser E2E tests
+    ├── PRD-hermes-enterprise-test.md
+    └── TEST-REPORT-enterprise.md
 ```
 
-See [`k8s-manifests/`](k8s-manifests/) for full manifest reference.
+---
+
+## Deployment / 部署
+
+### Prerequisites / 前置條件
+
+- K3s cluster (v1.28+) with `kubectl` access
+- Python 3 with `requests` module
+- Cloudflare API token (Zone:Read, DNS:Edit, Tunnel:Edit)
+- Minimax API key (https://www.minimax.io)
+
+### Step 1: Initialize Cloudflare Tunnel
+
+```bash
+CF_API_TOKEN=<your-token> python3 init-cloudflare-hermes.py
+```
+
+This creates `cf-config.json` with tunnel ID, token, and account ID.
+
+### Step 2: One-Click Deploy
+
+```bash
+MINIMAX_API_KEY=<your-key> ./deploy.sh
+```
+
+The deploy script will:
+1. Create `hermes` namespace
+2. Generate secrets (PostgreSQL password auto-generated)
+3. Apply all manifests in order
+4. Wait for databases → agent → WebUI to be ready
+5. Configure Cloudflare Tunnel route
+6. Show deployment status
+
+### Step 3: Verify
+
+```bash
+kubectl get pods -n hermes
+kubectl get svc -n hermes
+```
+
+Expected output: 5 pods all `1/1 Running`.
+
+### Step 4: Access
+
+Open `https://hermes-woowtechmag.woowtech.io` and login with the configured password.
 
 ---
 
-## K3s Manifests / K3s 清單
+## Custom Docker Image / 自訂映像
 
-| Manifest | Component |
-|----------|-----------|
-| `00-namespace.yaml` | Namespace `hermes` |
-| `01-secrets.yaml` | API keys, tokens, credentials |
-| `01a-rbac.yaml` | ServiceAccount + ClusterRole (read) + Role (write) |
-| `02-configmap.yaml` | Cloudflare config, Hermes settings |
-| `03-pvc.yaml` | PVC: PostgreSQL 10Gi, Redis 5Gi, Hermes Home 10Gi |
-| `04-postgresql.yaml` | PostgreSQL 15 + Service |
-| `05-redis.yaml` | Redis 7-alpine + AOF + Service |
-| `06-hermes-agent.yaml` | Hermes Agent (custom image) + Service |
-| `07-hermes-webui.yaml` | Hermes WebUI + initContainers + CLI tools |
-| `08-cloudflared.yaml` | Cloudflare Tunnel connector |
-| `09-ingress.yaml` | Traefik Ingress (/ → WebUI, /api → Agent) |
-| `10-network-policy.yaml` | DB/Redis access restricted to app pods |
+The agent uses a custom image built from `Dockerfile.hermes-agent` extending `nousresearch/hermes-agent:latest` (Debian 13 trixie).
+
+### 26 CLI Tools Baked In
+
+| Wave | Tools | Size |
+|------|-------|------|
+| **Wave 1**: Core | jq, yq (mikefarah), fd, rsync, git-lfs, mosh | ~30MB |
+| **Wave 2**: Business | psql (17.9), redis-cli, kubectl (v1.34.3), helm (v3.17.3), argocd (v2.14.12), cloudflared, gh (2.73.0) | ~250MB |
+| **Wave 3**: Content | pandoc, ImageMagick, gcloud SDK (gsutil/bq), httpie | ~350MB |
+| **Wave 4**: Exploration | lynx, yt-dlp, nmap, dig, ping, nc, traceroute, chromium, playwright-cli | ~300MB |
+
+### Build & Import
+
+```bash
+# Build
+./build-image.sh
+
+# Import to K3s
+buildah push hermes-agent-custom:latest docker-archive:/tmp/hermes.tar
+sudo k3s ctr images import /tmp/hermes.tar
+```
+
+---
+
+## RBAC / 權限
+
+`01a-rbac.yaml` creates:
+
+| Resource | Name | Scope |
+|----------|------|-------|
+| **ServiceAccount** | `hermes-agent-sa` | hermes namespace |
+| **ClusterRole** | `hermes-agent-cluster-reader` | Cluster-wide read-only |
+| **ClusterRoleBinding** | `hermes-agent-cluster-reader-binding` | Binds SA to ClusterRole |
+| **Role** | `hermes-agent-ns-writer` | hermes namespace write |
+| **RoleBinding** | `hermes-agent-ns-writer-binding` | Binds SA to Role |
+
+**Cluster-wide read**: pods, services, deployments, nodes, namespaces, events, PVC, ingress, network policies
+
+**Namespace write** (hermes only): patch deployments, delete pods, view logs, exec, manage configmaps, view secrets
+
+---
+
+## Persistence / 持久化
+
+| PVC | Size | Mount | Data |
+|-----|------|-------|------|
+| `hermes-home-pvc` | 10Gi | Agent `/opt/data` | config.yaml, .env, sessions, memories, skills, logs |
+| `hermes-postgresql-pvc` | 10Gi | PostgreSQL `/var/lib/postgresql/data` | Database |
+| `hermes-redis-pvc` | 5Gi | Redis `/data` | AOF persistence |
+
+WebUI uses `emptyDir` volumes — config/tools rebuilt by initContainers on each restart.
+
+---
+
+## Network / 網路
+
+### Services
+
+| Service | Type | Ports | Selector |
+|---------|------|-------|----------|
+| `hermes-agent-svc` | ClusterIP | 8642 (gateway), 9119 (dashboard) | `app=hermes-agent` |
+| `hermes-webui-svc` | ClusterIP | 8787 | `app=hermes-webui` |
+| `hermes-postgresql-svc` | ClusterIP | 5432 | `app=hermes-postgresql` |
+| `hermes-redis-svc` | ClusterIP | 6379 | `app=hermes-redis` |
+
+### Ingress
+
+| Path | Backend |
+|------|---------|
+| `/` | hermes-webui-svc:8787 |
+| `/api` | hermes-agent-svc:8642 |
+
+### Network Policies
+
+- PostgreSQL: only `hermes-agent` and `hermes-webui` pods can connect on 5432
+- Redis: only `hermes-agent` and `hermes-webui` pods can connect on 6379
 
 ---
 
 ## Testing / 測試
 
-Enterprise-grade test suite with 80+ tests:
-
-| Round | Tests | Coverage |
-|-------|-------|----------|
-| Round 1 | 17 | Infrastructure health (pods, services, PVC, network policies) |
-| Round 2 | 14 | Backend API (PostgreSQL CRUD, Redis, DNS, HTTPS) |
-| Round 3 | 16 | Security & stress (XSS, SQLi, concurrent, TLS) |
-| Round 4 | 11 | Resilience (pod kill, data persistence, scaling, rollback) |
-| Round 5 | 10 | Cross-service integration (ingress routing, ConfigMap, tunnel) |
-| Playwright | 12 | Browser E2E (auth, responsive, navigation, performance) |
-| CLI E2E | 15 | CLI tools verification via real chat conversations |
+### Full Test Suite (80+ tests)
 
 ```bash
-# Run full test suite
 bash tests/run-all.sh
+```
 
-# Run CLI tools E2E
+| Round | Tests | Pass Rate |
+|-------|-------|-----------|
+| R1 Infrastructure | 17 | 100% |
+| R2 Backend API | 14 | 85%+ |
+| R3 Security | 16 | 86%+ |
+| R4 Resilience | 11 | 100% |
+| R5 Integration | 10 | 100% |
+| Playwright Browser | 12 | 100% |
+| **Overall** | **80** | **96%+** |
+
+### CLI Tools E2E (15 scenarios)
+
+```bash
 bash tests/run-cli-tools-e2e.sh
+```
+
+15 enterprise scenarios testing all 26 tools through real Hermes chat conversations via Playwright CLI:
+- S1: kubectl cluster health
+- S2: psql PostgreSQL query
+- S3: redis-cli cache inspection
+- S4: curl+jq JSON API processing
+- S5: yq YAML config extraction
+- S6: dig DNS + ping network
+- S7: lynx web page retrieval
+- S8: fd+rg file search
+- S9: helm environment
+- S10: gh GitHub CLI
+- S11: argocd+cloudflared
+- S12: ImageMagick create+identify
+- S13: pandoc Markdown→HTML
+- S14: nmap+nc port scan
+- S15: git+rsync+traceroute multi-tool
+
+---
+
+## Troubleshooting / 故障排除
+
+### Pod Not Starting
+
+```bash
+kubectl describe pod -n hermes -l app=hermes-agent
+kubectl logs -n hermes deploy/hermes-agent --tail=30
+```
+
+### WebUI "AIAgent not available"
+
+The WebUI needs hermes-agent source code. Check initContainer `clone-agent-src`:
+```bash
+kubectl logs -n hermes -l app=hermes-webui -c clone-agent-src
+```
+
+### Cloudflare Tunnel Not Connected
+
+```bash
+kubectl logs -n hermes deploy/cloudflared --tail=10
+```
+Look for `Registered tunnel connection` messages.
+
+### CLI Tools Not Found in Chat
+
+Tools are installed via WebUI's postStart hook (~60s). Check:
+```bash
+kubectl exec -n hermes deploy/hermes-webui -- cat /tmp/tools-install.log
 ```
 
 ---
 
-## Security / 安全
+## Management Commands / 管理指令
 
-- **RBAC**: ServiceAccount with cluster-wide read + namespace-scoped write
-- **Network Policies**: PostgreSQL and Redis restricted to hermes-agent and hermes-webui pods
-- **Secrets**: API keys stored in K8s Secrets (base64), never in ConfigMaps
-- **Password Auth**: WebUI protected with password authentication
-- **TLS**: Cloudflare Tunnel provides end-to-end HTTPS
-- **Non-root**: Agent runs as hermes user (UID 10000)
+```bash
+# View all resources
+kubectl get all -n hermes
+
+# View logs
+kubectl logs -n hermes deploy/hermes-agent -f
+kubectl logs -n hermes deploy/hermes-webui -f
+
+# Restart a service
+kubectl rollout restart deploy/hermes-agent -n hermes
+
+# Enter PostgreSQL
+kubectl exec -it -n hermes deploy/hermes-postgresql -- psql -U hermes -d hermes
+
+# Enter Redis
+kubectl exec -it -n hermes deploy/hermes-redis -- redis-cli
+
+# Delete everything
+kubectl delete namespace hermes
+```
 
 ---
 
