@@ -1,0 +1,7 @@
+# =============================================================================
+# CODEOWNERS — Woow Hermes Agent Docker Compose All
+# =============================================================================
+# All changes require review from WOOWTECH org members.
+# This prevents unauthorized pushes from polluting the repo.
+
+* @WOOWTECH
