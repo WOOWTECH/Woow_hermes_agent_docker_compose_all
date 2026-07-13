@@ -1,5 +1,5 @@
 model:
-  default: MiniMax-M2.7-highspeed
+  default: MiniMax-M3
   provider: minimax
   context_length: 200000
 providers: {}
@@ -197,6 +197,9 @@ auxiliary:
     timeout: 600
     extra_body: {}
 display:
+  tool_progress: all
+  long_running_notifications: true
+  busy_ack_detail: true
   compact: false
   personality: kawaii
   resume_display: full
@@ -300,6 +303,8 @@ memory:
   user_profile_enabled: true
   memory_char_limit: 2200
   user_char_limit: 1375
+  flush_min_turns: 6
+  nudge_interval: 10
   provider: ''
 delegation:
   model: ''
@@ -318,6 +323,7 @@ delegation:
 prefill_messages_file: ''
 goals:
   max_turns: 20
+group_sessions_per_user: true
 skills:
   external_dirs: []
   template_vars: true
@@ -439,7 +445,7 @@ logging:
 model_catalog:
   enabled: true
   url: https://hermes-agent.nousresearch.com/docs/api/model-catalog.json
-  ttl_hours: 24
+  ttl_hours: 1
   providers: {}
 network:
   force_ipv4: false
@@ -482,14 +488,27 @@ secrets:
 paste_collapse_threshold: 5
 paste_collapse_threshold_fallback: 5
 paste_collapse_char_threshold: 2000
-_config_version: 24
+_config_version: 33
 platform_toolsets:
-  api_server:
-  - terminal
+  cli:
+  - browser
+  - clarify
+  - code_execution
+  - computer_use
+  - cronjob
+  - delegation
   - file
-  - web
+  - homeassistant
+  - image_gen
+  - kanban
   - memory
+  - session_search
   - skills
+  - terminal
+  - todo
+  - tts
+  - vision
+  - web
 mcp_servers:
   playwright:
     command: npx
@@ -538,6 +557,30 @@ platforms:
           model: openai/o3-mini
           base_url: https://openrouter.ai/api/v1
           api_key: __OPENROUTER_API_KEY__
+        glm-4.5:
+          model: z-ai/glm-4.5
+          base_url: https://openrouter.ai/api/v1
+          api_key: __OPENROUTER_API_KEY__
+        glm-4.5-flash:
+          model: z-ai/glm-4.5-flash
+          base_url: https://openrouter.ai/api/v1
+          api_key: __OPENROUTER_API_KEY__
+        glm-4.7:
+          model: z-ai/glm-4.7
+          base_url: https://openrouter.ai/api/v1
+          api_key: __OPENROUTER_API_KEY__
+        glm-5:
+          model: z-ai/glm-5
+          base_url: https://openrouter.ai/api/v1
+          api_key: __OPENROUTER_API_KEY__
+        glm-5-turbo:
+          model: z-ai/glm-5-turbo
+          base_url: https://openrouter.ai/api/v1
+          api_key: __OPENROUTER_API_KEY__
+        glm-5.1:
+          model: z-ai/glm-5.1
+          base_url: https://openrouter.ai/api/v1
+          api_key: __OPENROUTER_API_KEY__
         "@openai:gpt-5.5":
           model: openai/gpt-5.5
           base_url: https://openrouter.ai/api/v1
@@ -556,6 +599,10 @@ platforms:
           api_key: __OPENROUTER_API_KEY__
         "@openai:gpt-5.4-nano":
           model: openai/gpt-5.4-nano
+          base_url: https://openrouter.ai/api/v1
+          api_key: __OPENROUTER_API_KEY__
+        "@openai:gpt-5.5-mini":
+          model: openai/gpt-5.5-mini
           base_url: https://openrouter.ai/api/v1
           api_key: __OPENROUTER_API_KEY__
         "@openai:gpt-5-mini":
@@ -601,6 +648,10 @@ platforms:
           api_key: __OPENROUTER_API_KEY__
         "@openai-api:gpt-5.4-nano":
           model: openai/gpt-5.4-nano
+          base_url: https://openrouter.ai/api/v1
+          api_key: __OPENROUTER_API_KEY__
+        "@openai-api:gpt-5.5-mini":
+          model: openai/gpt-5.5-mini
           base_url: https://openrouter.ai/api/v1
           api_key: __OPENROUTER_API_KEY__
         "@openai-api:gpt-5-mini":

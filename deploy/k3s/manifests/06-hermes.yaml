@@ -1,0 +1,225 @@
+# =============================================================
+# Hermes - Combined Agent + WebUI Deployment (Sidecar)
+# =============================================================
+# Both containers share the same Pod for localhost communication.
+# Agent: nousresearch/hermes-agent:latest (Gateway:8642, Dashboard:9119)
+# WebUI: ghcr.io/nesquena/hermes-webui:latest (:8787)
+# =============================================================
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: hermes
+  namespace: __NAMESPACE__
+  labels:
+    app: hermes
+    app.kubernetes.io/component: agent
+    app.kubernetes.io/part-of: hermes
+spec:
+  replicas: 1
+  strategy:
+    type: Recreate
+  selector:
+    matchLabels:
+      app: hermes
+  template:
+    metadata:
+      labels:
+        app: hermes
+    spec:
+      serviceAccountName: hermes-agent-sa
+      securityContext:
+        fsGroup: 0
+      containers:
+      - name: hermes-agent
+        image: nousresearch/hermes-agent:latest
+        imagePullPolicy: Always
+        args: [gateway, run]
+        ports:
+        - {containerPort: 8642, name: gateway, protocol: TCP}
+        - {containerPort: 9119, name: dashboard, protocol: TCP}
+        env:
+        - {name: HERMES_DASHBOARD, value: "1"}
+        - {name: HERMES_DASHBOARD_INSECURE, value: "1"}
+        - {name: HERMES_UID, value: "1000"}
+        - {name: HERMES_GID, value: "1000"}
+        - {name: API_SERVER_ENABLED, value: "true"}
+        - {name: API_SERVER_HOST, value: "0.0.0.0"}
+        - name: API_SERVER_KEY
+          valueFrom:
+            secretKeyRef:
+              name: hermes-secrets
+              key: API_SERVER_KEY
+        - {name: API_SERVER_CORS_ORIGINS, value: "*"}
+        - {name: GATEWAY_ALLOW_ALL_USERS, value: "true"}
+        - name: MINIMAX_API_KEY
+          valueFrom:
+            secretKeyRef:
+              name: hermes-secrets
+              key: MINIMAX_API_KEY
+        - {name: PLAYWRIGHT_BROWSERS_PATH, value: /opt/data/playwright-browsers}
+        - {name: PATH, value: "/opt/data/.local/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:/opt/google-cloud-sdk/bin"}
+        - {name: HERMES_DASHBOARD_TUI, value: "1"}
+        - {name: HERMES_TUI_DIR, value: /opt/data/ui-tui}
+        - {name: HERMES_DASHBOARD_BASIC_AUTH_USERNAME, value: admin}
+        - {name: HERMES_DASHBOARD_BASIC_AUTH_PASSWORD, value: admin}
+        - {name: DOTNET_SYSTEM_GLOBALIZATION_INVARIANT, value: "true"}
+        lifecycle:
+          postStart:
+            exec:
+              command:
+              - sh
+              - -c
+              - >-
+                rm -f /usr/local/bin/argocd /usr/local/bin/helm /usr/bin/docker 2>/dev/null;
+                ln -sf /opt/hermes/.venv/bin/hermes /usr/local/bin/hermes 2>/dev/null;
+                rm -rf /opt/hermes/skills/apple /opt/hermes/skills/gaming
+                /opt/hermes/skills/email /opt/hermes/skills/social-media
+                /opt/hermes/skills/yuanbao /opt/hermes/skills/media/heartmula
+                /opt/hermes/skills/media/songsee /opt/hermes/skills/media/spotify
+                /opt/hermes/skills/media/youtube-content
+                /opt/hermes/skills/smart-home/openhue 2>/dev/null;
+                SITE=$(/opt/hermes/.venv/bin/python3 -c "import site;print(site.getsitepackages()[0])" 2>/dev/null)
+                && pip install --break-system-packages -q --target="$SITE" ddgs 2>/dev/null || true;
+                curl -sfL -o /opt/data/officecli "https://github.com/iOfficeAI/OfficeCLI/releases/download/v1.0.135/officecli-linux-x64" 2>/dev/null
+                && chmod +x /opt/data/officecli && ln -sf /opt/data/officecli /usr/local/bin/officecli 2>/dev/null || true
+        readinessProbe:
+          tcpSocket: {port: 8642}
+          initialDelaySeconds: 10
+          periodSeconds: 10
+          failureThreshold: 6
+        livenessProbe:
+          tcpSocket: {port: 8642}
+          initialDelaySeconds: 30
+          periodSeconds: 30
+          failureThreshold: 5
+        resources:
+          requests: {cpu: 200m, memory: 1Gi}
+          limits: {cpu: "2", memory: 6Gi}
+        securityContext:
+          runAsUser: 0
+          runAsGroup: 0
+        volumeMounts:
+        - {mountPath: /opt/data, name: hermes-data}
+        - {mountPath: /shared-pw, name: playwright-shared}
+        - {mountPath: /shared-tools, name: tools-shared}
+      - name: hermes-webui
+        image: ghcr.io/nesquena/hermes-webui:latest
+        imagePullPolicy: Always
+        command: [sh, -c]
+        args:
+        - |
+          mkdir -p /home/hermeswebui/.hermes
+          echo "MINIMAX_API_KEY=${MINIMAX_API_KEY}" > /home/hermeswebui/.hermes/.env
+          chmod 644 /home/hermeswebui/.hermes/.env
+
+          for i in $(seq 1 90); do
+            HTTP=$(curl -s -o /dev/null -w "%{http_code}" http://localhost:8642/ 2>/dev/null)
+            [ "$HTTP" = "200" ] || [ "$HTTP" = "404" ] && break
+            sleep 2
+          done
+
+          (while true; do
+            NOW=$(python3 -c "from datetime import datetime,timezone;print(datetime.now(timezone.utc).isoformat())")
+            printf '{"gateway_state":"running","updated_at":"%s","pid":1,"platform":"hermes-agent","version":"0.13.0"}\n' "$NOW" > /home/hermeswebui/.hermes/gateway_state.json 2>/dev/null
+            sleep 25
+          done) &
+
+          rm -f /home/hermeswebui/.hermes/.skills_prompt_snapshot.json 2>/dev/null
+
+          if [ -f /hermeswebui_init.bash ]; then
+            sed -i 's/chmod 700 "$itdir"/chmod 755 "$itdir"/' /hermeswebui_init.bash 2>/dev/null
+            sed -i '/cd \/app; python server.py/i test -f /home/hermeswebui/.hermes/replace_icons.sh \&\& sh /home/hermeswebui/.hermes/replace_icons.sh 2>/dev/null || true' /hermeswebui_init.bash 2>/dev/null
+            exec /hermeswebui_init.bash
+          else
+            echo "WebUI init script not found, sleeping..."
+            sleep infinity
+          fi
+        env:
+        - {name: HERMES_WEBUI_CHAT_BACKEND, value: gateway}
+        - name: HERMES_WEBUI_GATEWAY_API_KEY
+          valueFrom:
+            secretKeyRef:
+              name: hermes-secrets
+              key: API_SERVER_KEY
+        - name: MINIMAX_API_KEY
+          valueFrom:
+            secretKeyRef:
+              name: hermes-secrets
+              key: MINIMAX_API_KEY
+        - {name: PLAYWRIGHT_BROWSERS_PATH, value: /opt/data/playwright-browsers}
+        - {name: LD_LIBRARY_PATH, value: /opt/shared-tools/lib}
+        - {name: PATH, value: "/opt/shared-tools:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin"}
+        - {name: HERMES_WEBUI_HOST, value: "0.0.0.0"}
+        - {name: HERMES_WEBUI_PORT, value: "8787"}
+        - {name: HERMES_WEBUI_STATE_DIR, value: /home/hermeswebui/.hermes/webui}
+        - {name: HERMES_HOME, value: /home/hermeswebui/.hermes}
+        - {name: WANTED_UID, value: "1000"}
+        - {name: WANTED_GID, value: "1000"}
+        - {name: GATEWAY_HEALTH_URL, value: "http://localhost:8642"}
+        - {name: HERMES_WEBUI_PASSWORD, value: "__WEBUI_PASSWORD__"}
+        - {name: HERMES_DASHBOARD_BASIC_AUTH_USERNAME, value: admin}
+        - {name: HERMES_DASHBOARD_BASIC_AUTH_PASSWORD, value: admin}
+        tty: true
+        ports:
+        - {containerPort: 8787, name: http, protocol: TCP}
+        lifecycle:
+          postStart:
+            exec:
+              command: [sh, /home/hermeswebui/.hermes/replace_icons.sh]
+        readinessProbe:
+          tcpSocket: {port: 8787}
+          initialDelaySeconds: 30
+          periodSeconds: 10
+          failureThreshold: 12
+        livenessProbe:
+          tcpSocket: {port: 8787}
+          initialDelaySeconds: 90
+          periodSeconds: 30
+          failureThreshold: 5
+        resources:
+          requests: {cpu: 500m, memory: 512Mi}
+          limits: {cpu: "2", memory: 2Gi}
+        volumeMounts:
+        - {mountPath: /home/hermeswebui/.hermes, name: hermes-data}
+        - {mountPath: /opt/playwright-browsers, name: playwright-shared}
+        - {mountPath: /opt/shared-tools, name: tools-shared}
+      volumes:
+      - name: hermes-data
+        persistentVolumeClaim:
+          claimName: hermes-webui-data
+      - name: playwright-shared
+        emptyDir: {}
+      - name: tools-shared
+        emptyDir: {}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: hermes-agent-svc
+  namespace: __NAMESPACE__
+  labels:
+    app: hermes
+    app.kubernetes.io/part-of: hermes
+spec:
+  selector:
+    app: hermes
+  ports:
+  - {port: 8642, targetPort: 8642, name: gateway, protocol: TCP}
+  - {port: 9119, targetPort: 9119, name: dashboard, protocol: TCP}
+  type: ClusterIP
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: hermes-webui-svc
+  namespace: __NAMESPACE__
+  labels:
+    app: hermes
+    app.kubernetes.io/part-of: hermes
+spec:
+  selector:
+    app: hermes
+  publishNotReadyAddresses: true
+  ports:
+  - {port: 8787, targetPort: 8787, name: http, protocol: TCP}
+  type: ClusterIP

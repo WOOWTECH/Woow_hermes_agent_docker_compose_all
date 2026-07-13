@@ -18,9 +18,15 @@ OPENROUTER_KEY = os.environ.get('OPENROUTER_API_KEY', '__OPENROUTER_API_KEY__')
 
 # All OpenAI models visible in the WebUI picker
 MODELS = [
-    'gpt-5.5', 'gpt-5.5-pro', 'gpt-5.4-mini', 'gpt-5.4',
+    'gpt-5.5', 'gpt-5.5-pro', 'gpt-5.5-mini', 'gpt-5.4-mini', 'gpt-5.4',
     'gpt-5.4-nano', 'gpt-5-mini', 'gpt-5.3-codex', 'gpt-5.2-codex',
     'gpt-4.1', 'gpt-4o', 'gpt-4o-mini'
+]
+
+# ZhipuAI GLM models (bare name routes only, no @openai: prefix needed)
+GLM_MODELS = [
+    'glm-4.5', 'glm-4.5-flash', 'glm-4.7',
+    'glm-5', 'glm-5-turbo', 'glm-5.1'
 ]
 
 # Both prefixes: @openai: (new catalog IDs) and @openai-api: (old session IDs)
@@ -39,6 +45,16 @@ for prefix in PREFIXES:
     for m in MODELS:
         route_lines.append(f'          "{prefix}{m}":')
         route_lines.append(f'            model: openai/{m}')
+        route_lines.append(f'            base_url: https://openrouter.ai/api/v1')
+        route_lines.append(f'            api_key: {OPENROUTER_KEY}')
+        added += 1
+
+# Add GLM bare-name routes
+for m in GLM_MODELS:
+    key = m
+    if key not in content:
+        route_lines.append(f'          "{key}":')
+        route_lines.append(f'            model: z-ai/{m}')
         route_lines.append(f'            base_url: https://openrouter.ai/api/v1')
         route_lines.append(f'            api_key: {OPENROUTER_KEY}')
         added += 1

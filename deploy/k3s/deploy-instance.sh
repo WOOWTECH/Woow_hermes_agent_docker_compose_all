@@ -7,7 +7,7 @@ PREFIX="${1:?Usage: $0 <prefix> <domain>}"
 DOMAIN="${2:?Usage: $0 <prefix> <domain>}"
 
 CONTEXT="woow-k3s"
-NS="apporoalan-hermes"
+NS="${PREFIX}-hermes"
 K="kubectl --context $CONTEXT -n $NS"
 NEW_API_KEY="${MINIMAX_API_KEY:?Set MINIMAX_API_KEY env var}"
 NEW_KEY_B64=$(echo -n "$NEW_API_KEY" | base64 -w0)
