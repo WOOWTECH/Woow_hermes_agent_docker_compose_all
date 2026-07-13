@@ -1,5 +1,5 @@
 NAME                                READY   STATUS    RESTARTS      AGE   IP            NODE                 NOMINATED NODE   READINESS GATES
-cloudflared-945c67d54-s47vx         1/1     Running   0             27d   10.42.2.253   ubuntuserver-pggrg   <none>           <none>
-hermes-59fbdd5456-2vjmv             2/2     Running   1 (15h ago)   16h   10.42.3.143   ubuntuserver-31zix   <none>           <none>
-hermes-postgresql-bff764596-p9nsr   1/1     Running   0             45d   10.42.3.96    ubuntuserver-31zix   <none>           <none>
-hermes-redis-67ddcbd856-wcjks       1/1     Running   0             45d   10.42.0.247   ubuntuserver-z0v3w   <none>           <none>
+cloudflared-945c67d54-s47vx         1/1     Running   0             27d   10.42.x.x     node-1               <none>           <none>
+hermes-59fbdd5456-2vjmv             2/2     Running   1 (15h ago)   16h   10.42.x.x     node-2               <none>           <none>
+hermes-postgresql-bff764596-p9nsr   1/1     Running   0             45d   10.42.x.x     node-2               <none>           <none>
+hermes-redis-67ddcbd856-wcjks       1/1     Running   0             45d   10.42.x.x     node-3               <none>           <none>

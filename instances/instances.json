@@ -1,7 +1,7 @@
 {
   "default_agent_image": "nousresearch/hermes-agent:latest",
   "default_webui_image": "ghcr.io/nesquena/hermes-webui:latest",
-  "default_webui_password": "woowtech",
+  "default_webui_password": "__WEBUI_PASSWORD__",
   "default_llm_provider": "minimax",
   "default_llm_model": "MiniMax-M3",
   "instances": {
@@ -41,7 +41,7 @@
       "namespace": "johhanlin-hermes",
       "domain": "johhanlin-hermes.woowtech.io",
       "tunnel_name": "johhanlin-hermes",
-      "purpose": "HSBC 外匯交易顧問",
+      "purpose": "外匯交易顧問",
       "status": "deployed",
       "postgres_version": "15"
     },

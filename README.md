@@ -66,7 +66,7 @@
 |----------|--------|---------|
 | WoowTech | `woowtech-hermes.woowtech.io` | Odoo 18 ERP Consultant |
 | Apporo Alan | `apporoalan-hermes.woowtech.io` | ESG/WELL/LEED Building Consultant |
-| Johhan Lin | `johhanlin-hermes.woowtech.io` | HSBC Forex Consultant |
+| Johhan Lin | `johhanlin-hermes.woowtech.io` | Forex Consultant |
 | Alan Lin | `alanlin-hermes.woowtech.io` | General AI Assistant |
 | TorchMedia | `torchmedia-hermes.woowtech.io` | General AI Assistant |
 

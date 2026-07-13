@@ -60,7 +60,7 @@ Hermes Agent 平台目前部署於 K3s Kubernetes 叢集，透過 Cloudflare Tun
 | 項目 | 內容 |
 |------|------|
 | 登入方式 | 密碼登入（無帳號，僅密碼） |
-| 預設密碼 | `woowtech` |
+| 預設密碼 | *(部署時設定，見 .env)* |
 | LLM 模型 | Minimax M2.7 |
 | Provider | Minimax |
 
@@ -120,7 +120,7 @@ Hermes Agent 容器內預裝 **47 個 CLI 工具**，涵蓋 6 大類別：
 
 ### 步驟 2：輸入密碼
 
-在密碼欄位輸入 `woowtech`，然後點擊「Sign in」或按 Enter 鍵。
+在密碼欄位輸入部署時設定的密碼，然後點擊「Sign in」或按 Enter 鍵。
 
 ![填入密碼，準備登入](images/ch02_02_login_filled.png)
 

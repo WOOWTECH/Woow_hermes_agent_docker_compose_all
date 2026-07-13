@@ -9,8 +9,8 @@ metadata:
   labels:
     app.kubernetes.io/part-of: hermes
 data:
-  CF_ACCOUNT_ID: "REDACTED_CF_ACCOUNT_ID"
-  CF_TUNNEL_ID: "REDACTED_CF_TUNNEL_ID"
+  CF_ACCOUNT_ID: "__CF_ACCOUNT_ID__"
+  CF_TUNNEL_ID: "__CF_TUNNEL_ID__"
   DOMAIN: "apporoalan-hermes.woowtech.io"
 ---
 apiVersion: v1

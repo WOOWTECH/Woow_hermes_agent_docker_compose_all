@@ -529,7 +529,7 @@ platforms:
   webhook:
     enabled: true
     extra:
-      secret: REDACTED_WEBHOOK_SECRET
+      secret: __WEBHOOK_SECRET__
   api_server:
     extra:
       model_routes:

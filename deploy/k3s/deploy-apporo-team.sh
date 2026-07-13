@@ -261,9 +261,9 @@ spec:
         - name: HERMES_DASHBOARD_INSECURE
           value: "1"
         - name: HERMES_DASHBOARD_BASIC_AUTH_USERNAME
-          value: "admin"
+          value: "\${DASHBOARD_USERNAME:-admin}"
         - name: HERMES_DASHBOARD_BASIC_AUTH_PASSWORD
-          value: "admin"
+          value: "\${DASHBOARD_PASSWORD:-changeme}"
         - name: HERMES_UID
           value: "1000"
         - name: HERMES_GID
@@ -394,7 +394,7 @@ spec:
         - name: GATEWAY_HEALTH_URL
           value: http://localhost:8642
         - name: HERMES_WEBUI_PASSWORD
-          value: admin
+          value: "\${WEBUI_PASSWORD:-changeme}"
         tty: true
         ports:
         - containerPort: 8787

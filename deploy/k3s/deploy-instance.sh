@@ -260,8 +260,8 @@ spec:
         env:
         - {name: HERMES_DASHBOARD, value: "1"}
         - {name: HERMES_DASHBOARD_INSECURE, value: "1"}
-        - {name: HERMES_DASHBOARD_BASIC_AUTH_USERNAME, value: "admin"}
-        - {name: HERMES_DASHBOARD_BASIC_AUTH_PASSWORD, value: "admin"}
+        - {name: HERMES_DASHBOARD_BASIC_AUTH_USERNAME, value: "\${DASHBOARD_USERNAME:-admin}"}
+        - {name: HERMES_DASHBOARD_BASIC_AUTH_PASSWORD, value: "\${DASHBOARD_PASSWORD:-changeme}"}
         - {name: HERMES_DASHBOARD_TUI, value: "1"}
         - {name: HERMES_TUI_DIR, value: "/opt/data/ui-tui"}
         - {name: HERMES_UID, value: "1000"}
@@ -359,7 +359,7 @@ spec:
         - {name: WANTED_UID, value: "1000"}
         - {name: WANTED_GID, value: "1000"}
         - {name: GATEWAY_HEALTH_URL, value: "http://localhost:8642"}
-        - {name: HERMES_WEBUI_PASSWORD, value: admin}
+        - {name: HERMES_WEBUI_PASSWORD, value: "\${WEBUI_PASSWORD:-changeme}"}
         tty: true
         ports:
         - {containerPort: 8787, name: http}

@@ -116,7 +116,7 @@ fi
 # 3.11 Secrets not leaked in pod describe
 DESCRIBE=$(kubectl -n "$NAMESPACE" describe pods 2>/dev/null)
 LEAKED=false
-for secret_word in "VbABwop" "sk-cp-Mm9" "qtFYmY"; do
+for secret_word in "EXAMPLE_SECRET_1" "EXAMPLE_SECRET_2" "EXAMPLE_SECRET_3"; do
   echo "$DESCRIBE" | grep -q "$secret_word" && LEAKED=true
 done
 [[ "$LEAKED" == "false" ]] && pass "No secrets in pod describe" || fail "Secret leak" "found in describe"

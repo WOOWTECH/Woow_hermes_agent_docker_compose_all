@@ -1,7 +1,7 @@
 import { test, expect } from '@playwright/test';
 
 const BASE = process.env.HERMES_TEST_URL || 'http://localhost:18787';
-const PASSWORD = 'woowtech';
+const PASSWORD = process.env.WEBUI_PASSWORD || 'changeme';
 
 /**
  * Helper: login to WebUI if password form is present

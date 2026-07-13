@@ -223,7 +223,7 @@ $KC port-forward "$POD" 18787:8787 &
 PF_PID=$!
 sleep 3
 curl -s -c /tmp/woow-cookie -X POST -H "Content-Type: application/json" \
-  -d '{"password":"admin"}' http://localhost:18787/api/auth/login >/dev/null 2>&1
+  -d "{\"password\":\"${WEBUI_PASSWORD:-admin}\"}" http://localhost:18787/api/auth/login >/dev/null 2>&1
 SKILLS=$(curl -s -b /tmp/woow-cookie http://localhost:18787/api/skills | python3 -c "
 import sys,json
 try:

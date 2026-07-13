@@ -9,7 +9,7 @@ metadata:
   labels:
     app.kubernetes.io/part-of: hermes
 data:
-  CF_ACCOUNT_ID: "REDACTED_CF_ACCOUNT_ID"
+  CF_ACCOUNT_ID: "__CF_ACCOUNT_ID__"
   CF_TUNNEL_ID: "PLACEHOLDER"
   DOMAIN: "alanlin-hermes.woowtech.io"
 ---
