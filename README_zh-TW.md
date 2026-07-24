@@ -18,7 +18,15 @@
     <a href="README.md">English</a> |
     <a href="README_zh-TW.md">繁體中文</a>
   </p>
+
+  <p>
+    <code>main</code> · <strong><code>k3s</code></strong> · <a href="../../tree/podman"><code>podman</code></a>
+  </p>
 </div>
+
+> **這是 `k3s` 分支** — 包含 Kubernetes 部署 manifests、腳本和設定。<br/>
+> 尋找 Podman？切換到 [`podman` 分支](../../tree/podman)。<br/>
+> 需要概覽？請見 [`main` 分支](../../tree/main)。
 
 ---
 
@@ -415,50 +423,6 @@ bash deploy.sh <instance-name>
 9. `08-cloudflared.yaml` — Cloudflare Tunnel Sidecar
 10. `09-ingress.yaml` — Ingress 規則
 11. `10-network-policy.yaml` — Pod 間網路隔離
-
-### Podman 部署
-
-**前置條件**：Podman 4.x+、`podman-compose`、8GB+ RAM。
-
-```bash
-# 1. 複製本倉庫
-git clone https://github.com/WOOWTECH/Woow_hermes_agent_docker_compose_all.git
-cd Woow_hermes_agent_docker_compose_all
-
-# 2. 複製並編輯環境變數
-cd deploy/podman
-cp .env.example .env
-vim .env  # 設定 API keys
-
-# 3. 部署
-podman-compose up -d
-
-# 4.（選用）套用品牌
-python3 apply_branding.py
-```
-
-端口：WebUI `18787`、Dashboard `19119`、Gateway `18642`。
-
----
-
-## 快速開始
-
-```bash
-# K3s（正式環境）
-git clone https://github.com/WOOWTECH/Woow_hermes_agent_docker_compose_all.git
-cd Woow_hermes_agent_docker_compose_all/deploy/k3s
-cp ../../.env.example .env && vim .env
-bash deploy.sh woowtech
-
-# Podman（單節點）
-cd deploy/podman
-cp .env.example .env && vim .env
-podman-compose up -d
-```
-
----
-
-## 配置說明
 
 ### 黃金配置（`config/golden-config.yaml`）
 

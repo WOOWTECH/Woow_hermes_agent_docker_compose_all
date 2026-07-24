@@ -2,7 +2,7 @@
   <img src="branding/template-icons/favicon.svg" width="120" alt="Hermes Agent Logo" />
 
   <h1>WoowTech Hermes Agent</h1>
-  <p><strong>Enterprise AI Assistant with Dual GUI, 47 CLI Tools, 93 Skills, and Multi-Instance White-Label Deployment</strong></p>
+  <p><strong>Enterprise AI Assistant — K8s Deployment</strong><br/><sub>Kubernetes manifests, deploy scripts, and configuration for production deployment on K3s</sub></p>
 
   <p>
     <img src="https://img.shields.io/badge/Hermes_Agent-v0.19.0-blue?style=flat-square" alt="Hermes Agent v0.19.0" />
@@ -18,7 +18,15 @@
     <a href="README.md">English</a> |
     <a href="README_zh-TW.md">繁體中文</a>
   </p>
+
+  <p>
+    <code>main</code> · <strong><code>k3s</code></strong> · <a href="../../tree/podman"><code>podman</code></a>
+  </p>
 </div>
+
+> **This is the `k3s` branch** — contains Kubernetes deployment manifests, scripts, and configuration.<br/>
+> Looking for Podman? Switch to the [`podman` branch](../../tree/podman).<br/>
+> Looking for an overview? See the [`main` branch](../../tree/main).
 
 ---
 
@@ -462,50 +470,6 @@ bash deploy.sh <instance-name>
 9. `08-cloudflared.yaml` — Cloudflare Tunnel sidecar
 10. `09-ingress.yaml` — Ingress rules
 11. `10-network-policy.yaml` — Pod-to-pod network isolation
-
-### Podman Deployment
-
-**Prerequisites**: Podman 4.x+, `podman-compose`, 8GB+ RAM.
-
-```bash
-# 1. Clone this repo
-git clone https://github.com/WOOWTECH/Woow_hermes_agent_docker_compose_all.git
-cd Woow_hermes_agent_docker_compose_all
-
-# 2. Copy and edit environment file
-cd deploy/podman
-cp .env.example .env
-vim .env  # Set API keys
-
-# 3. Deploy
-podman-compose up -d
-
-# 4. (Optional) Apply branding
-python3 apply_branding.py
-```
-
-Ports: WebUI at `18787`, Dashboard at `19119`, Gateway at `18642`.
-
----
-
-## Quick Start
-
-```bash
-# K3s (production)
-git clone https://github.com/WOOWTECH/Woow_hermes_agent_docker_compose_all.git
-cd Woow_hermes_agent_docker_compose_all/deploy/k3s
-cp ../../.env.example .env && vim .env
-bash deploy.sh woowtech
-
-# Podman (single-node)
-cd deploy/podman
-cp .env.example .env && vim .env
-podman-compose up -d
-```
-
----
-
-## Configuration
 
 ### Golden Configuration (`config/golden-config.yaml`)
 
