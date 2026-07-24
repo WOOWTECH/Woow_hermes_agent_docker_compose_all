@@ -150,12 +150,12 @@ fi
 
 # Step 11b: Model routing fix (@openai: prefix support)
 echo "Step 11b: Model routing fix..."
-podman cp "${SCRIPT_DIR}/../template/fix-model-routes.py" hermes-agent:/tmp/fix-model-routes.py 2>/dev/null || true
+podman cp "${SCRIPT_DIR}/../../config/fix-model-routes.py" hermes-agent:/tmp/fix-model-routes.py 2>/dev/null || true
 podman exec hermes-agent python3 /tmp/fix-model-routes.py 2>/dev/null || echo "  (model routes: no model_routes section yet)"
 
 # Step 11c: .env fingerprint patch (Dashboard→WebUI model sync)
 echo "Step 11c: .env fingerprint patch..."
-podman cp "${SCRIPT_DIR}/../template/apply-env-fingerprint-patch.py" hermes-webui:/tmp/apply-env-patch.py 2>/dev/null || true
+podman cp "${SCRIPT_DIR}/../../config/apply-env-fingerprint-patch.py" hermes-webui:/tmp/apply-env-patch.py 2>/dev/null || true
 # Apply to both possible code locations (/app and /apptoo)
 for CFG_DIR in /app /apptoo; do
     podman exec hermes-webui sh -c "test -f ${CFG_DIR}/api/config.py && sed -i 's|CFG = .*|CFG = \"${CFG_DIR}/api/config.py\"|' /tmp/apply-env-patch.py && python3 /tmp/apply-env-patch.py" 2>/dev/null || true

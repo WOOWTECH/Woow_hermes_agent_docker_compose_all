@@ -18,7 +18,15 @@
     <a href="README.md">English</a> |
     <a href="README_zh-TW.md">繁體中文</a>
   </p>
+
+  <p>
+    <code>main</code> · <a href="../../tree/k3s"><code>k3s</code></a> · <strong><code>podman</code></strong>
+  </p>
 </div>
+
+> **這是 `podman` 分支** — 包含 Podman Compose 單節點部署方案。<br/>
+> 需要 Kubernetes？切換到 [`k3s` 分支](../../tree/k3s)。<br/>
+> 需要概覽？請見 [`main` 分支](../../tree/main)。
 
 ---
 
@@ -384,37 +392,6 @@ URL:  https://<PREFIX>-hermes-terminal.woowtech.io
 | **HTTPS** | Cloudflare Tunnel（Sidecar） | 手動 / 反向代理 |
 | **品牌** | 每命名空間獨立部署腳本 | `apply_branding.py` |
 | **資源需求** | 共享叢集節點 | 獨立主機（8GB+ RAM） |
-
-### K3s 部署
-
-**前置條件**：K3s 叢集（可用 `kubectl`）、Longhorn 儲存、Cloudflare 帳號。
-
-```bash
-# 1. 複製本倉庫
-git clone https://github.com/WOOWTECH/Woow_hermes_agent_docker_compose_all.git
-cd Woow_hermes_agent_docker_compose_all
-
-# 2. 複製並編輯環境變數
-cp .env.example .env
-vim .env  # 設定 MINIMAX_API_KEY, OPENROUTER_API_KEY 等
-
-# 3. 部署到 K3s
-cd deploy/k3s
-bash deploy.sh <instance-name>
-```
-
-依序套用 11 個 K8s manifest：
-1. `00-namespace.yaml` — 建立命名空間
-2. `01a-rbac.yaml` — RBAC 權限設定
-3. `02-configmap.yaml` — golden-config.yaml + golden-settings.json
-4. `03-pvc.yaml` — Longhorn 5Gi 持久化磁碟區
-5. `04-postgresql.yaml` — PostgreSQL 15 StatefulSet
-6. `05-redis.yaml` — Redis 7 Deployment
-7. `06-hermes-agent.yaml` — Agent Deployment（Gateway + Dashboard）
-8. `07-hermes-webui.yaml` — WebUI Deployment
-9. `08-cloudflared.yaml` — Cloudflare Tunnel Sidecar
-10. `09-ingress.yaml` — Ingress 規則
-11. `10-network-policy.yaml` — Pod 間網路隔離
 
 ### Podman 部署
 

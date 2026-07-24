@@ -45,6 +45,8 @@ services:
       - MINIMAX_API_KEY=${MINIMAX_API_KEY}
       - OPENROUTER_API_KEY=${OPENROUTER_API_KEY}
       - PLAYWRIGHT_BROWSERS_PATH=/opt/data/playwright-browsers
+      - HERMES_DASHBOARD_PUBLIC_URL=${HERMES_DASHBOARD_PUBLIC_URL:-http://localhost:19119}
+      - HERMES_BASE_URL=${HERMES_DASHBOARD_PUBLIC_URL:-http://localhost:19119}
       - DOTNET_SYSTEM_GLOBALIZATION_INVARIANT=true
       - NODE_OPTIONS=--max-old-space-size=4096
       - PATH=/opt/data/.local/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin

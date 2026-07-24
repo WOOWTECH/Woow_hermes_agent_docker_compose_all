@@ -2,7 +2,7 @@
   <img src="branding/template-icons/favicon.svg" width="120" alt="Hermes Agent Logo" />
 
   <h1>WoowTech Hermes Agent</h1>
-  <p><strong>Enterprise AI Assistant with Dual GUI, 47 CLI Tools, 93 Skills, and Multi-Instance White-Label Deployment</strong></p>
+  <p><strong>Enterprise AI Assistant — Podman Deployment</strong><br/><sub>Podman Compose stack for single-node deployment with full feature parity</sub></p>
 
   <p>
     <img src="https://img.shields.io/badge/Hermes_Agent-v0.19.0-blue?style=flat-square" alt="Hermes Agent v0.19.0" />
@@ -18,7 +18,15 @@
     <a href="README.md">English</a> |
     <a href="README_zh-TW.md">繁體中文</a>
   </p>
+
+  <p>
+    <code>main</code> · <a href="../../tree/k3s"><code>k3s</code></a> · <strong><code>podman</code></strong>
+  </p>
 </div>
+
+> **This is the `podman` branch** — contains Podman Compose deployment for single-node setups.<br/>
+> Looking for Kubernetes? Switch to the [`k3s` branch](../../tree/k3s).<br/>
+> Looking for an overview? See the [`main` branch](../../tree/main).
 
 ---
 
@@ -431,37 +439,6 @@ The terminal is deployed as a separate lightweight pod (`deploy/k3s/manifests/11
 | **HTTPS** | Cloudflare Tunnel (sidecar) | Manual / reverse proxy |
 | **Branding** | Per-namespace via deploy scripts | `apply_branding.py` |
 | **Resources** | Shared across cluster nodes | Dedicated host (8GB+ RAM) |
-
-### K3s Deployment
-
-**Prerequisites**: K3s cluster with `kubectl` access, Longhorn storage, Cloudflare account.
-
-```bash
-# 1. Clone this repo
-git clone https://github.com/WOOWTECH/Woow_hermes_agent_docker_compose_all.git
-cd Woow_hermes_agent_docker_compose_all
-
-# 2. Copy and edit environment file
-cp .env.example .env
-vim .env  # Set MINIMAX_API_KEY, OPENROUTER_API_KEY, etc.
-
-# 3. Deploy to K3s
-cd deploy/k3s
-bash deploy.sh <instance-name>
-```
-
-11 K8s manifests are applied in order:
-1. `00-namespace.yaml` — Namespace creation
-2. `01a-rbac.yaml` — RBAC for hermes user
-3. `02-configmap.yaml` — golden-config.yaml + golden-settings.json
-4. `03-pvc.yaml` — Longhorn 5Gi persistent volume
-5. `04-postgresql.yaml` — PostgreSQL 15 StatefulSet
-6. `05-redis.yaml` — Redis 7 Deployment
-7. `06-hermes-agent.yaml` — Agent Deployment (Gateway + Dashboard)
-8. `07-hermes-webui.yaml` — WebUI Deployment
-9. `08-cloudflared.yaml` — Cloudflare Tunnel sidecar
-10. `09-ingress.yaml` — Ingress rules
-11. `10-network-policy.yaml` — Pod-to-pod network isolation
 
 ### Podman Deployment
 
