@@ -5,10 +5,11 @@
   <p><strong>Enterprise AI Assistant with Dual GUI, 47 CLI Tools, 93 Skills, and Multi-Instance White-Label Deployment</strong></p>
 
   <p>
-    <img src="https://img.shields.io/badge/Hermes_Agent-v0.15-blue?style=flat-square" alt="Hermes Agent v0.15" />
+    <img src="https://img.shields.io/badge/Hermes_Agent-v0.19.0-blue?style=flat-square" alt="Hermes Agent v0.19.0" />
     <img src="https://img.shields.io/badge/K3s-v1.34-green?style=flat-square&logo=k3s" alt="K3s" />
     <img src="https://img.shields.io/badge/Podman-supported-orange?style=flat-square&logo=podman" alt="Podman" />
-    <img src="https://img.shields.io/badge/LLM-MiniMax_M2.7-purple?style=flat-square" alt="LLM" />
+    <img src="https://img.shields.io/badge/LLM-MiniMax_M1-purple?style=flat-square" alt="LLM" />
+    <img src="https://img.shields.io/badge/MCP-4_servers-teal?style=flat-square" alt="MCP" />
     <img src="https://img.shields.io/badge/Tests-7_rounds_+_Playwright-brightgreen?style=flat-square" alt="Tests" />
     <img src="https://img.shields.io/badge/License-Proprietary-red?style=flat-square" alt="License" />
   </p>
@@ -27,6 +28,9 @@
 - [Key Features](#key-features)
 - [Architecture](#architecture)
 - [System Components](#system-components)
+- [Service URLs](#service-urls)
+- [MCP Integration](#mcp-integration)
+- [Browser Terminal (ttyd)](#browser-terminal-ttyd)
 - [Screenshots](#screenshots)
 - [Deployment Options](#deployment-options)
 - [Quick Start](#quick-start)
@@ -235,13 +239,123 @@ graph LR
 
 ## System Components
 
-| Component | Image | Port | Purpose |
-|-----------|-------|------|---------|
-| **Hermes Agent** | `nousresearch/hermes-agent:latest` | 8642 (Gateway), 9119 (Dashboard) | AI engine, tool execution, Gateway API, Dashboard with TUI |
-| **Hermes WebUI** | `ghcr.io/nesquena/hermes-webui:latest` | 8787 | Chat interface, Skills, Memory, Kanban, Insights |
-| **PostgreSQL** | `postgres:15` | 5432 | Data persistence (conversations, memory, settings) |
-| **Redis** | `redis:7-alpine` | 6379 | Cache, session state |
-| **Cloudflared** | Sidecar in K3s | N/A | Cloudflare Tunnel for HTTPS access |
+| Component | Image | Port | Purpose | K8s Manifest |
+|-----------|-------|------|---------|-------------|
+| **Hermes Agent** | `nousresearch/hermes-agent:latest` | 8642 (Gateway), 9119 (Dashboard) | AI engine, tool execution, Gateway API, Dashboard with TUI | `06-hermes.yaml` |
+| **Hermes WebUI** | `ghcr.io/nesquena/hermes-webui:latest` | 8787 | Chat interface, Skills, Memory, Kanban, Insights | `06-hermes.yaml` (sidecar) |
+| **Browser Terminal** | `ubuntu:24.04` + ttyd 1.7.7 | 7681 | Browser-based TUI — kubectl exec into hermes-agent shell | `11-terminal.yaml` |
+| **PostgreSQL** | `postgres:15` | 5432 | Data persistence (conversations, memory, settings) | `04-postgresql.yaml` |
+| **Redis** | `redis:7-alpine` | 6379 | Cache, session state | `05-redis.yaml` |
+| **Cloudflared** | `cloudflare/cloudflared:latest` | — | Cloudflare Tunnel for HTTPS access | `08-cloudflared.yaml` |
+
+### K8s Manifest Overview
+
+```
+deploy/k3s/manifests/
+├── 00-namespace.yaml          # hermes namespace
+├── 01-secrets.yaml            # Secrets template (CF + app secrets)
+├── 01a-rbac.yaml              # ServiceAccount + RBAC (cluster-reader + ns-writer)
+├── 02-configmap.yaml          # Configuration (domain, ports, DB, Redis)
+├── 03-pvc.yaml                # Persistent volumes (agent, webui, postgres, redis)
+├── 04-postgresql.yaml         # PostgreSQL 15 deployment + service
+├── 05-redis.yaml              # Redis 7 deployment + service
+├── 06-hermes.yaml             # Hermes Agent + WebUI sidecar deployment + services
+├── 08-cloudflared.yaml        # Cloudflare Tunnel deployment
+├── 09-ingress.yaml            # Traefik ingress routing
+├── 10-network-policy.yaml     # Network policies (DB + Redis access control)
+└── 11-terminal.yaml           # ttyd browser terminal (kubectl exec into agent)
+```
+
+---
+
+## Service URLs
+
+The WoowTech Hermes deployment exposes three services via Cloudflare Tunnel:
+
+| Service | URL | Port | Purpose |
+|---------|-----|------|---------|
+| **WebUI** (Chat) | `https://<PREFIX>-hermes.woowtech.io` | 8787 | Primary user interface — chat, skills, memory, kanban |
+| **Dashboard** (Admin) | `https://<PREFIX>-dashboard.woowtech.io` | 9119 | Agent management — config, MCP, models, logs, system |
+| **Terminal** (TUI) | `https://<PREFIX>-hermes-terminal.woowtech.io` | 7681 | Browser-based bash shell into hermes-agent container |
+
+All services are protected by authentication:
+- WebUI: Password login
+- Dashboard: Username/Password (Basic provider)
+- Terminal: HTTP Basic Auth (admin / configured password)
+
+---
+
+## MCP Integration
+
+Hermes supports connecting to remote [Model Context Protocol (MCP)](https://modelcontextprotocol.io/) servers for extended tool capabilities.
+
+### Configured MCP Servers
+
+| Server | URL | Auth | Status |
+|--------|-----|------|--------|
+| Higgsfield | `https://mcp.higgsfield.ai/mcp` | OAuth 2.1 + PKCE | Authenticate via Dashboard |
+| Browserless | `https://mcp.browserless.io/mcp` | Bearer Token | API key in headers |
+| Cloudflare | `https://mcp.cloudflare.com/mcp` | OAuth 2.1 + PKCE | Authenticate via Dashboard |
+| WoowTech Odoo | `https://woowtech-mcp-odoo.woowtech.io/...` | URL Token | Auto-connects |
+
+### Dashboard MCP OAuth
+
+For OAuth-based MCP servers (Higgsfield, Cloudflare), authentication is done directly from the Dashboard:
+
+1. Go to **Dashboard → MCP** page
+2. Click **🔑 Authenticate** on the server row
+3. A popup opens to the OAuth provider's login page
+4. After authorization, the callback returns to the Dashboard
+5. Tokens are stored in `mcp-tokens/` and auto-refresh
+
+**Requirements:**
+- `HERMES_DASHBOARD_PUBLIC_URL` must be set to the Dashboard's public URL
+- The callback path `/api/mcp/oauth/callback/*` must be publicly reachable
+
+### MCP OAuth Patch
+
+The Dashboard's React SPA shows the Authenticate button for all HTTP MCP servers via a runtime patch:
+
+```bash
+# Re-apply after pod restart
+bash patches/mcp-oauth-all-http.sh [kubectl-context] [namespace]
+```
+
+This is also applied automatically via the agent container's `postStart` lifecycle hook.
+
+---
+
+## Browser Terminal (ttyd)
+
+A browser-based terminal provides direct shell access into the hermes-agent container — the same environment where all 47 CLI tools, the Hermes CLI, and MCP servers run.
+
+### Architecture
+
+```
+Browser → Cloudflare Tunnel → ttyd pod (:7681) → connect.sh → kubectl exec → hermes-agent bash
+```
+
+### Access
+
+```
+URL:  https://<PREFIX>-hermes-terminal.woowtech.io
+Auth: HTTP Basic (admin / configured password)
+```
+
+### What's Available in the Terminal
+
+- `hermes` CLI (version, config, mcp list/login, gateway, etc.)
+- All 47 pre-installed CLI tools (git, jq, yq, gh, nmap, playwright, etc.)
+- Python 3.13 + pip
+- Direct access to `/opt/data/config.yaml` and `.hermes/` state directory
+- Same PID namespace as the running Gateway and Dashboard processes
+
+### Manifest
+
+The terminal is deployed as a separate lightweight pod (`deploy/k3s/manifests/11-terminal.yaml`):
+- **Image**: `ubuntu:24.04` (ttyd + kubectl downloaded at startup)
+- **Resources**: 50m CPU / 64Mi RAM (request), 200m CPU / 256Mi (limit)
+- **RBAC**: Dedicated ServiceAccount with pods/get,list + pods/exec only
 
 ---
 

@@ -5,10 +5,11 @@
   <p><strong>企業級 AI 智慧助手 — 雙介面、47 個 CLI 工具、93 個技能、多實例白標部署</strong></p>
 
   <p>
-    <img src="https://img.shields.io/badge/Hermes_Agent-v0.15-blue?style=flat-square" alt="Hermes Agent v0.15" />
+    <img src="https://img.shields.io/badge/Hermes_Agent-v0.19.0-blue?style=flat-square" alt="Hermes Agent v0.19.0" />
     <img src="https://img.shields.io/badge/K3s-v1.34-green?style=flat-square&logo=k3s" alt="K3s" />
     <img src="https://img.shields.io/badge/Podman-supported-orange?style=flat-square&logo=podman" alt="Podman" />
-    <img src="https://img.shields.io/badge/LLM-MiniMax_M2.7-purple?style=flat-square" alt="LLM" />
+    <img src="https://img.shields.io/badge/LLM-MiniMax_M1-purple?style=flat-square" alt="LLM" />
+    <img src="https://img.shields.io/badge/MCP-4_servers-teal?style=flat-square" alt="MCP" />
     <img src="https://img.shields.io/badge/Tests-7_rounds_+_Playwright-brightgreen?style=flat-square" alt="Tests" />
     <img src="https://img.shields.io/badge/License-Proprietary-red?style=flat-square" alt="License" />
   </p>
@@ -235,13 +236,79 @@ graph LR
 
 ## 系統元件
 
-| 元件 | 映像 | 端口 | 用途 |
-|------|------|------|------|
-| **Hermes Agent** | `nousresearch/hermes-agent:latest` | 8642（Gateway）, 9119（Dashboard） | AI 引擎、工具執行、Gateway API、Dashboard + TUI |
-| **Hermes WebUI** | `ghcr.io/nesquena/hermes-webui:latest` | 8787 | 對話介面、技能、記憶、看板、數據分析 |
-| **PostgreSQL** | `postgres:15` | 5432 | 資料持久化（對話、記憶、設定） |
-| **Redis** | `redis:7-alpine` | 6379 | 快取、Session 狀態 |
-| **Cloudflared** | K3s Sidecar | N/A | Cloudflare Tunnel，提供 HTTPS 存取 |
+| 元件 | 映像 | 端口 | 用途 | K8s Manifest |
+|------|------|------|------|-------------|
+| **Hermes Agent** | `nousresearch/hermes-agent:latest` | 8642（Gateway）, 9119（Dashboard） | AI 引擎、工具執行、Gateway API、Dashboard + TUI | `06-hermes.yaml` |
+| **Hermes WebUI** | `ghcr.io/nesquena/hermes-webui:latest` | 8787 | 對話介面、技能、記憶、看板、數據分析 | `06-hermes.yaml`（sidecar） |
+| **瀏覽器終端** | `ubuntu:24.04` + ttyd 1.7.7 | 7681 | 瀏覽器 TUI — kubectl exec 進入 hermes-agent shell | `11-terminal.yaml` |
+| **PostgreSQL** | `postgres:15` | 5432 | 資料持久化（對話、記憶、設定） | `04-postgresql.yaml` |
+| **Redis** | `redis:7-alpine` | 6379 | 快取、Session 狀態 | `05-redis.yaml` |
+| **Cloudflared** | `cloudflare/cloudflared:latest` | — | Cloudflare Tunnel，提供 HTTPS 存取 | `08-cloudflared.yaml` |
+
+---
+
+## 服務 URL
+
+WoowTech Hermes 透過 Cloudflare Tunnel 對外暴露三個服務：
+
+| 服務 | URL | 端口 | 用途 |
+|------|-----|------|------|
+| **WebUI**（聊天） | `https://<PREFIX>-hermes.woowtech.io` | 8787 | 主要使用者介面 — 對話、技能、記憶、看板 |
+| **Dashboard**（管理） | `https://<PREFIX>-dashboard.woowtech.io` | 9119 | Agent 管理 — 設定、MCP、模型、日誌、系統 |
+| **Terminal**（終端） | `https://<PREFIX>-hermes-terminal.woowtech.io` | 7681 | 瀏覽器 bash shell，直接操作 hermes-agent 容器 |
+
+---
+
+## MCP 整合
+
+Hermes 支援連接遠端 [Model Context Protocol (MCP)](https://modelcontextprotocol.io/) 伺服器，擴展工具能力。
+
+### 已設定的 MCP Server
+
+| Server | URL | 認證方式 | 狀態 |
+|--------|-----|---------|------|
+| Higgsfield | `https://mcp.higgsfield.ai/mcp` | OAuth 2.1 + PKCE | Dashboard 授權 |
+| Browserless | `https://mcp.browserless.io/mcp` | Bearer Token | API key |
+| Cloudflare | `https://mcp.cloudflare.com/mcp` | OAuth 2.1 + PKCE | Dashboard 授權 |
+| WoowTech Odoo | `https://woowtech-mcp-odoo.woowtech.io/...` | URL Token | 自動連接 |
+
+### Dashboard MCP OAuth 認證
+
+需要 OAuth 的 MCP Server 可直接從 Dashboard 完成認證：
+
+1. 前往 **Dashboard → MCP** 頁面
+2. 點擊 **🔑 Authenticate**
+3. 在彈出視窗完成 OAuth 登入
+4. Token 自動儲存並定期刷新
+
+**必要設定：**
+- `HERMES_DASHBOARD_PUBLIC_URL` 需指向 Dashboard 的公開 URL
+
+---
+
+## 瀏覽器終端（ttyd）
+
+提供瀏覽器直接存取 hermes-agent 容器的 bash shell，與 Agent 在相同的環境中操作。
+
+### 架構
+
+```
+瀏覽器 → Cloudflare Tunnel → ttyd Pod (:7681) → connect.sh → kubectl exec → hermes-agent bash
+```
+
+### 存取方式
+
+```
+URL:  https://<PREFIX>-hermes-terminal.woowtech.io
+認證: HTTP Basic Auth（admin / 設定的密碼）
+```
+
+### 終端中可用的工具
+
+- `hermes` CLI（version、config、mcp list/login 等）
+- 全部 47 個預裝 CLI 工具
+- Python 3.13 + pip
+- 直接存取 `/opt/data/config.yaml` 和 `.hermes/` 狀態目錄
 
 ---
 
