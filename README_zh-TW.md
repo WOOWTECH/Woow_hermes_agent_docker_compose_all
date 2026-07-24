@@ -22,6 +22,22 @@
 
 ---
 
+## 選擇部署方式
+
+| | K8s（生產環境） | Podman（單節點） |
+|---|---|---|
+| **分支** | [`k3s`](../../tree/k3s) | [`podman`](../../tree/podman) |
+| **適用場景** | 多節點、多租戶、高可用 | 單台伺服器、開發/測試 |
+| **包含** | 12 個 K8s manifests、Cloudflare Tunnel、ttyd 終端、RBAC | Podman Compose、自動部署腳本 |
+| **外部存取** | Cloudflare Tunnel（3 個 hostname） | 直接端口映射 |
+| **MCP OAuth** | Dashboard OAuth（公開 URL callback） | Dashboard OAuth（localhost callback） |
+| **多租戶** | 支援（namespace 隔離） | 不支援 |
+| **瀏覽器終端** | ttyd（獨立 Pod） | `podman exec` |
+
+> **快速開始：** 選擇上方分支，按照其 README 操作。
+
+---
+
 ## 目錄
 
 - [總覽](#總覽)

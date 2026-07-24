@@ -2,7 +2,7 @@
   <img src="branding/template-icons/favicon.svg" width="120" alt="Hermes Agent Logo" />
 
   <h1>WoowTech Hermes Agent</h1>
-  <p><strong>Enterprise AI Assistant with Dual GUI, 47 CLI Tools, 93 Skills, and Multi-Instance White-Label Deployment</strong></p>
+  <p><strong>Enterprise AI Assistant with Dual GUI, 47 CLI Tools, MCP Integration, and Multi-Instance Deployment</strong></p>
 
   <p>
     <img src="https://img.shields.io/badge/Hermes_Agent-v0.19.0-blue?style=flat-square" alt="Hermes Agent v0.19.0" />
@@ -19,6 +19,22 @@
     <a href="README_zh-TW.md">繁體中文</a>
   </p>
 </div>
+
+---
+
+## Choose Your Deployment
+
+| | K8s (Production) | Podman (Single Node) |
+|---|---|---|
+| **Branch** | [`k3s`](../../tree/k3s) | [`podman`](../../tree/podman) |
+| **Best for** | Multi-node, multi-instance, HA | Single server, dev/test, quick start |
+| **Includes** | 12 K8s manifests, Cloudflare Tunnel, ttyd terminal, RBAC, NetworkPolicy | Podman Compose, auto-deploy script |
+| **External access** | Cloudflare Tunnel (3 hostnames) | Direct port mapping |
+| **MCP OAuth** | Dashboard OAuth (public URL callback) | Dashboard OAuth (localhost callback) |
+| **Multi-instance** | Yes (namespace isolation) | No |
+| **Browser terminal** | ttyd (dedicated pod) | `podman exec` |
+
+> **Quick start:** Pick a branch above and follow its README.
 
 ---
 
